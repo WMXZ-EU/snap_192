@@ -27,6 +27,7 @@
  *  init(void);
  *  void exit(void);
  *  void open(char * filename);
+ *  void writeHeader(char * header, uint32_t ndat);
  *  void close(void);
  *  uint32_t write(uint8_t *buffer, uint32_t nbuf);
  *  uint32_t read(uint8_t *buffer, uint32_t nbuf);
@@ -128,6 +129,14 @@ class c_mFS
       }
     }
 
+    void writeHeader(char * header, uint32_t ndat)
+    {
+      uint32_t fpos = file.curPosition();
+      file.seek(0);
+      file.write(header,ndat);
+      file.seek(fpos);
+      
+    }
     void close(void)
     {
       if(!file.truncate()) Serial.println("file.truncate failed");
@@ -193,6 +202,11 @@ class c_mFS
     void open(char * filename)
     {
       file = SD.open(filename, FILE_WRITE);
+    }
+
+    void writeHeader(char * header, uint32_t ndat) 
+    {
+      
     }
 
     void close(void)
@@ -280,6 +294,11 @@ class c_mFS
       // retry open file
       rc = f_open(&fil, wfilename, FA_WRITE | FA_CREATE_ALWAYS);
       if(rc) die((char*)"open", rc);
+    }
+    
+    void writeHeader(char * header, uint32_t ndat) 
+    {
+      
     }
     
     void close(void)

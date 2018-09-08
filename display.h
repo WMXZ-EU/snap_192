@@ -51,9 +51,6 @@ const int displayPow = 20;
 //int isf = I_SAMP;
 //
 
-float audio_srate = fsamps[FSI];
-int isf = FSI;
-
 int updateVal(long curVal, long minVal, long maxVal);
 void cDisplay();
 void displaySettings();

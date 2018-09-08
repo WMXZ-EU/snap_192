@@ -27,6 +27,27 @@
 #include "kinetis.h"
 #include "core_pins.h"
 
+typedef struct {
+    char    rId[4];
+    unsigned int rLen;
+    char    wId[4];
+    char    fId[4];
+    unsigned int    fLen;
+    unsigned short nFormatTag;
+    unsigned short nChannels;
+    unsigned int nSamplesPerSec;
+    unsigned int nAvgBytesPerSec;
+    unsigned short nBlockAlign;
+    unsigned short  nBitsPerSamples;
+    char    iId[4];
+    unsigned int  iLen;
+    char    info[512-13*4]; // fill header to 512 bytes
+    char    dId[4];
+    unsigned int    dLen;
+} HdrStruct;
+
+HdrStruct wav_hdr;
+
 //==================== local uSD interface ========================================
 // this implementation used SdFs from Bill Greiman
 // which needs to be installed as local library 
@@ -121,6 +142,7 @@ void c_uSD::exit(void)
 { mFS.exit();
 }
 
+extern 
 int16_t c_uSD::write(int16_t *data, int32_t ndat)
 {
   if(state == 0)
@@ -149,7 +171,13 @@ int16_t c_uSD::write(int16_t *data, int32_t ndat)
   }
   
   if(state == 3)
-  { // close file
+  { // update Header
+    uint32_t ndat = 512 + nbuf*BUFFERSIZE * 2;
+    wav_hdr.dLen = ndat;
+    wav_hdr.rLen = 512 + wav_hdr.dLen;
+    mFS.writeHeader((char *) &wav_hdr,512); 
+
+    // close file
     mFS.close();
     state=0;  // flag to open new file
   }

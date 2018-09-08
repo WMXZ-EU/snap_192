@@ -27,6 +27,10 @@
 #define FSI 5// desired sampling frequency index
 #define MAX_FSI 6
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 240000};
+
+float audio_srate = fsamps[FSI];
+int isf = FSI;
+
 /*
  * NOTE: changing frequency impacts the macros 
  *      AudioProcessorUsage and AudioProcessorUsageMax
@@ -63,12 +67,10 @@ uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 24
   AudioControlSGTL5000 audioShield;
 
 // private 'library' included directly into sketch
+
 #include "i2s_mods.h"
 #include "logger_if.h"
 #include "hibernate.h"
-
-// display menu
-#include "display.h"
 
 // utility for hibernating
 const int32_t on = 60;
@@ -83,26 +85,39 @@ uint32_t record_or_sleep(void)
 }
 
 // utility for logger
-typedef struct {
-    char    rId[4];
-    unsigned int rLen;
-    char    wId[4];
-    char    fId[4];
-    unsigned int    fLen;
-    unsigned short nFormatTag;
-    unsigned short nChannels;
-    unsigned int nSamplesPerSec;
-    unsigned int nAvgBytesPerSec;
-    unsigned short nBlockAlign;
-    unsigned short  nBitsPerSamples;
-    char    dId[4];
-    unsigned int    dLen;
-} HdrStruct;
 
-HdrStruct wav_hdr;
+#define WAV_HEADER
 
 char * headerUpdate(void)
 {
+#ifdef WAV_HEADER
+    sprintf(wav_hdr.rId,"RIFF");
+//    wav_hdr.rLen=44-2*4;
+    wav_hdr.rLen=512-2*4;
+    sprintf(wav_hdr.wId,"WAVE");
+    
+    sprintf(wav_hdr.fId,"fmt ");
+    wav_hdr.fLen=0x10;
+    wav_hdr.nFormatTag=1;
+    wav_hdr.nChannels=1;
+    wav_hdr.nSamplesPerSec=audio_srate;
+    wav_hdr.nAvgBytesPerSec=audio_srate*2;
+    wav_hdr.nBlockAlign=2;
+    wav_hdr.nBitsPerSamples=16;
+
+    sprintf(wav_hdr.iId,"info");
+    wav_hdr.iLen = 512 - 13*4;
+    
+    sprintf(wav_hdr.dId,"data");
+    wav_hdr.dLen = MAXBUF * BUFFERSIZE * 2;
+    wav_hdr.rLen += wav_hdr.dLen;
+  
+//    frec.write((uint8_t *)&wav_hdr, 44);  // old
+//    frec.write((uint8_t *)&wav_hdr, 512); // new
+
+   return (char *)&wav_hdr;
+
+#else
   static char header[512];
   sprintf(&header[0], "WMXZ");
   
@@ -114,11 +129,12 @@ char * headerUpdate(void)
   *(uint32_t*) &header[24] = fsamps[isf];
   *(int32_t*) &header[28] = on;
   *(int32_t*) &header[32] = off;
-
   return header;
+
+#endif
 }
 
-
+// utility for acquisition
 const int hydroPowPin = 2;
 void acqInit(void)
 {
@@ -136,7 +152,7 @@ void acqExit(void)
   pinMode(23,INPUT_DISABLE);
 }
 
-/********************* Utility for using ADC ************************/
+// utility for non-acoustic data
 #define ADC_RES 10
 #define ADC_SCALE (float) (1<<ADC_RES)
 
@@ -189,6 +205,8 @@ void logAcq(void)
     file.close();
 }
 
+// display menu
+#include "display.h"
 
 //__________________________General Arduino Routines_____________________________________
 extern "C" void setup() {
