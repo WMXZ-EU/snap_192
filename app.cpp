@@ -230,11 +230,7 @@ extern "C" void setup() {
   #endif
 
 
-  if(menuSetup())
-  {
-    manualSettings();
-  }
-  menuExit();  
+  if(menuSetup()) {  manualSettings(); } menuExit();  
 
   uint32_t nsec = record_or_sleep();
   if(nsec>0)
