@@ -236,10 +236,12 @@ extern "C" void setup() {
   if(nsec>0)
   { 
     #if DO_DEBUG>0
-      Serial.println("hibernating...");
+      Serial.print("hibernating... "); Serial.print(nsec); Serial.println(" sec"); 
     #endif
+    Wire.begin();
     SGTL5000_disable();
     I2S_stopClock();
+    delay(100);
     setWakeupCallandSleep(nsec);
   }
 
