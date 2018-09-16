@@ -23,7 +23,7 @@
 #include "usb_serial.h"
 #include "Wire.h"
 
-#define DO_DEBUG 0
+#define DO_DEBUG 1
 #define FSI 5// desired sampling frequency index
 #define MAX_FSI 6
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 240000};
@@ -115,6 +115,15 @@ char * headerUpdate(void)
 //    frec.write((uint8_t *)&wav_hdr, 44);  // old
 //    frec.write((uint8_t *)&wav_hdr, 512); // new
 
+    struct tm tx = seconds2tm(RTC_TSR);
+    sprintf(&wav_hdr.info[0], "%04d_%02d_%02d_%02d_%02d_%02d", 
+                tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
+    //
+    // add more info to header
+    //
+    sprintf(&wav_hdr.info[20],"%6d, %4d, %4d",fsamps[isf],on,off);
+    sprintf(&wav_hdr.info[40],"end");
+
    return (char *)&wav_hdr;
 
 #else
@@ -169,9 +178,8 @@ float readVoltage(){
    for(int n = 0; n<8; n++){
     voltage += (float) analogRead(vSense) / ADC_SCALE;
    }
-//   voltage = 5.9f * voltage / 8.0f;   //fudging scaling based on actual measurements; shoud be max of 3.3V at 1023
-   voltage = 6.4f * voltage / 8.0f;   //fudging scaling based on actual measurements; shoud be max of 3.3V at 1023
-//   voltage = 6.6f * voltage / 8.0f;   //fudging scaling based on actual measurements; shoud be max of 3.3V at 1023
+   const float scl = 6.4f; // was 5.9f in original snap (should be 2*Vref or 2*3.3
+   voltage = scl * voltage / 8.0f;   //fudging scaling based on actual measurements; shoud be max of 3.3V at 1023
    return voltage;
 }
 
@@ -193,7 +201,12 @@ float readTemp(){
 
 void logAcq(void)
 {
+  #if USE_FS == SdFS
     FsFile file;
+  #elif  USE_FS == SDo
+    File file;
+  #endif
+
     if (!file.open("acqLog.txt", O_CREAT | O_WRITE | O_APPEND)) {Serial.println("LOG"); while(1);}
 
     struct tm tx = seconds2tm(RTC_TSR);
@@ -225,7 +238,11 @@ extern "C" void setup() {
 
   uint32_t nsec = record_or_sleep();
   if(nsec>0)
-  { SGTL5000_disable();
+  { 
+    #if DO_DEBUG>0
+      Serial.println("hibernating...");
+    #endif
+    SGTL5000_disable();
     I2S_stopClock();
     setWakeupCallandSleep(nsec);
   }
@@ -293,10 +310,12 @@ void loop() {
       {
         uint32_t nsec = record_or_sleep();
         if(nsec>0) 
-        { uSD.exit();
+        { queue1.end();
           acqExit();
           SGTL5000_disable();
           I2S_stopClock();
+          delay(100);
+          uSD.exit();
           setWakeupCallandSleep(nsec);      
         }
       }

@@ -42,14 +42,10 @@
 // Preallocate 8MB file.
 const uint64_t PRE_ALLOCATE_SIZE = 8ULL << 20;
 
-//--------------------- For File Time settings ------------------
-#if USE_FS != uSDFS
-#include "mTime.h"
-#endif
-
 /************************** File System Interface****************/
 #if USE_FS == SdFS
 
+#include "mTime.h"
 #include "SdFs.h"
 
 #if defined(__MK20DX256__)
@@ -98,24 +94,27 @@ class c_mFS
       FsDateTime::callback = dateTime;
     }
 
-    void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname);  }
+    void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname); }
     
-    void chDir(char * dirname)  { sd.chdir(dirname);   }
+    void chDir(char * dirname)  { sd.chdir(dirname); }
     
     void exit(void)
     {
-      #define SD_CS 10
-      digitalWriteFast(SD_CS,LOW);
-        int ii;
-        for(ii=0; SPI.transfer(0xff)!=0xFF && ii<30000; ii++) ;
-        #if DO_DEBUG>0
-          Serial.println(ii); Serial.flush();
-        #endif
-      digitalWriteFast(SD_CS,HIGH);
-
-      sd.end();
-      SPI.end();
-    
+      delay(100);
+      #if defined(__MK20DX256__)
+        #define SD_CS 10
+        digitalWriteFast(SD_CS,LOW);
+          int ii;
+          for(ii=0; SPI.transfer(0xff)!=0xFF && ii<30000; ii++) ;
+          #if DO_DEBUG>0
+            Serial.println(ii); Serial.flush();
+          #endif
+        digitalWriteFast(SD_CS,HIGH);
+        pinMode(SD_CS,INPUT_DISABLE);
+  
+        sd.end();
+        SPI.end();
+      #endif
     }
     
     void open(char * filename)
@@ -157,8 +156,9 @@ class c_mFS
 };
 
 #elif  USE_FS == SDo
+#include "mTime.h"
 #include "SPI.h"
-#include "SD.h"
+#include "SdFat.h"
 
 #if defined(__MK20DX256__)
   #define SD_CS 10
@@ -172,6 +172,7 @@ class c_mFS
 {
   private:
   File file;
+  SdFat sd;
 
   void die(char *txt) {Serial.println(txt); while(1) asm("wfi");}
   
@@ -186,27 +187,27 @@ class c_mFS
         SPI.setMOSI(7);
         SPI.setSCK(14);
       #endif  
-      if (!(SD.begin(SD_CS))) die("error SD.begin");
+      if (!(sd.begin(SD_CS))) die("error sd.begin");
     }
 
-    void mkDir(char * dirname)
-    {
-      sd.mkdir(dirname);
-    }
+    void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname); }
+    void chDir(char * dirname)  { sd.chdir(dirname); }
     
 
-    void exit(void)
-    {
-    }
+    void exit(void){ }
     
     void open(char * filename)
     {
-      file = SD.open(filename, FILE_WRITE);
+      file = sd.open(filename, FILE_WRITE);
     }
 
     void writeHeader(char * header, uint32_t ndat) 
     {
       
+      uint32_t fpos = file.curPosition();
+      file.seek(0);
+      file.write(header,ndat);
+      file.seek(fpos);
     }
 
     void close(void)

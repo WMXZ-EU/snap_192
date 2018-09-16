@@ -46,6 +46,31 @@ typedef struct {
     unsigned int    dLen;
 } HdrStruct;
 
+/*
+'IARL' ArchivalLocation 
+'IART' Artist 
+'ICMS' Commissioned 
+'ICMT' Comment 
+'ICOP' Copyright 
+'ICRD' DateCreated 
+'ICRP' Cropped 
+'IDIM' Dimensions 
+'IDPI' DotsPerInch 
+'IENG' Engineer 
+'IGNR' Genre 
+'IKEY' Keywords 
+'ILGT' Lightness 
+'IMED' Medium 
+'INAM' Title 
+'IPLT' NumColors 
+'IPRD' Product 
+'ISBJ' Subject 
+'ISFT' Software 
+'ISHP' Sharpness 
+'ISRC' Source 
+'ISRF' SourceForm 
+'ITCH' Technician 
+*/
 HdrStruct wav_hdr;
 
 //==================== local uSD interface ========================================
