@@ -134,7 +134,7 @@ static void gotoSleep(void)
    /*wait for write to complete to SMC before stopping core */
    (void) SMC_PMCTRL;
 
-       asm volatile( "wfi" );  // WFI instruction will start entry into STOP mode
+   asm volatile( "wfi" );  // WFI instruction will start entry into STOP mode
    // will never return, but wake-up results in call to ResetHandler() in mk20dx128.c
 }
 
