@@ -86,14 +86,18 @@ void I2S_modification(uint32_t fsamp, uint16_t nbits)
   I2S0_RCSR |= I2S_RCSR_RE | I2S_RCSR_BCE; 
 } 
 
-void I2S_stopClock(void)
+void I2S_stopClocks(void)
 {
-      SIM_SCGC6 &= ~SIM_SCGC6_I2S;
+    SIM_SCGC6 &= ~SIM_SCGC6_DMAMUX;
+    SIM_SCGC7 &= ~SIM_SCGC7_DMA;
+    SIM_SCGC6 &= ~SIM_SCGC6_I2S;
 }
 
-void I2S_startClock(void)
+void I2S_startClocks(void)
 {
-      SIM_SCGC6 |= SIM_SCGC6_I2S;
+  SIM_SCGC6 |= SIM_SCGC6_I2S;
+  SIM_SCGC7 |= SIM_SCGC7_DMA;
+  SIM_SCGC6 |= SIM_SCGC6_DMAMUX;
 }
 
 void I2S_stop(void)

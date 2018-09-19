@@ -241,7 +241,7 @@ extern "C" void setup() {
     Wire.begin();
     SGTL5000_disable();
     Wire.end();
-    I2S_stopClock();
+    I2S_stopClocks();
     delay(10);
     setWakeupCallandSleep(nsec);
   }
@@ -312,7 +312,7 @@ void loop() {
         { queue1.end();
           SGTL5000_disable();
           Wire.end();
-          I2S_stopClock();
+          I2S_stopClocks();
           acqExit();
           delay(10);
           uSD.exit();
