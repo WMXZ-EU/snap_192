@@ -150,7 +150,6 @@ void SGTL5000_modification(uint32_t fs_mode)
 void SGTL5000_disable(void)
 {
   chipWrite(CHIP_ANA_POWER, 0); 
- 
 }
 
 #endif

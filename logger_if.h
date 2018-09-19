@@ -167,7 +167,7 @@ void c_uSD::exit(void)
 { mFS.exit();
 }
 
-extern 
+
 int16_t c_uSD::write(int16_t *data, int32_t ndat)
 {
   if(state == 0)

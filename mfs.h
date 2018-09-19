@@ -95,7 +95,6 @@ class c_mFS
     }
 
     void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname); }
-    
     void chDir(char * dirname)  { sd.chdir(dirname); }
     
     void exit(void)
@@ -193,26 +192,15 @@ class c_mFS
     void mkDir(char * dirname)  { if(!sd.exists(dirname)) sd.mkdir(dirname); }
     void chDir(char * dirname)  { sd.chdir(dirname); }
     
-
+    void open(char * filename) { file = sd.open(filename, FILE_WRITE);  }
+    void close(void) { file.close(); }
     void exit(void){ }
-    
-    void open(char * filename)
-    {
-      file = sd.open(filename, FILE_WRITE);
-    }
 
     void writeHeader(char * header, uint32_t ndat) 
-    {
-      
-      uint32_t fpos = file.curPosition();
+    { uint32_t fpos = file.curPosition();
       file.seek(0);
       file.write(header,ndat);
       file.seek(fpos);
-    }
-
-    void close(void)
-    {
-      file.close();
     }
 
     uint32_t write(uint8_t *buffer, uint32_t nbuf)
@@ -222,7 +210,7 @@ class c_mFS
     }
 
     uint32_t read(uint8_t *buffer, uint32_t nbuf)
-    {      
+    {
       if ((int)nbuf != file.read(buffer, nbuf)) {Serial.println("error file read"); while(1) asm("wfi");}
       return nbuf;
     }

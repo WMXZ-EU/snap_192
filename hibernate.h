@@ -143,7 +143,7 @@ void setWakeupCallandSleep(uint32_t nsec)
    llwuSetup();
    
    rtcSetAlarm(nsec);
-   yield();
+   delay(10);
    gotoSleep();
 }
 #endif

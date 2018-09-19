@@ -98,7 +98,6 @@ void menuExit(void)
 
 }
 
-//time_t autoStartTime;
 uint32_t autoStartTime;
 
 #define noSet 0
@@ -127,7 +126,7 @@ boolean settingsChanged = 0;
 
 byte startHour, startMinute, endHour, endMinute; //used in Diel mode
 
-void manualSettings(){
+void menuLoop(){
   boolean startRec = 0, startUp, startDown;
   readEEPROM();
 

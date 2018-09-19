@@ -19,11 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#define DO_DEBUG 1
+
 #include "core_pins.h"
-#include "usb_serial.h"
+#if DO_DEBUG==0
+  #include "usb_serial.h"
+#endif
 #include "Wire.h"
 
-#define DO_DEBUG 1
 #define FSI 5// desired sampling frequency index
 #define MAX_FSI 6
 uint32_t fsamps[] = {8000, 16000, 32000, 44100, 48000, 96000, 192000, 220500, 240000};
@@ -56,12 +59,12 @@ int isf = FSI;
 
 // adapted from audio gui
   #include "input_i2s.h"
-  AudioInputI2S         acq;
+  AudioInputI2S        acq;
 
   #include "m_queue.h"
-  mRecordQueue<MQUEU> queue1;
+  mRecordQueue<MQUEU>  queue1;
 
-  AudioConnection     patchCord1(acq,SEL_LR, queue1,0);
+  AudioConnection      patchCord1(acq,SEL_LR, queue1,0);
 
   #include "control_sgtl5000.h"
   AudioControlSGTL5000 audioShield;
@@ -108,13 +111,6 @@ char * headerUpdate(void)
     sprintf(wav_hdr.iId,"info");
     wav_hdr.iLen = 512 - 13*4;
     
-    sprintf(wav_hdr.dId,"data");
-    wav_hdr.dLen = MAXBUF * BUFFERSIZE * 2;
-    wav_hdr.rLen += wav_hdr.dLen;
-  
-//    frec.write((uint8_t *)&wav_hdr, 44);  // old
-//    frec.write((uint8_t *)&wav_hdr, 512); // new
-
     struct tm tx = seconds2tm(RTC_TSR);
     sprintf(&wav_hdr.info[0], "%04d_%02d_%02d_%02d_%02d_%02d", 
                 tx.tm_year, tx.tm_mon, tx.tm_mday, tx.tm_hour, tx.tm_min, tx.tm_sec);
@@ -124,6 +120,10 @@ char * headerUpdate(void)
     sprintf(&wav_hdr.info[20],"%6d, %4d, %4d",fsamps[isf],on,off);
     sprintf(&wav_hdr.info[40],"end");
 
+    sprintf(wav_hdr.dId,"data");
+    wav_hdr.dLen = MAXBUF * BUFFERSIZE * 2;
+    wav_hdr.rLen += wav_hdr.dLen;
+  
    return (char *)&wav_hdr;
 
 #else
@@ -178,7 +178,7 @@ float readVoltage(){
    for(int n = 0; n<8; n++){
     voltage += (float) analogRead(vSense) / ADC_SCALE;
    }
-   const float scl = 6.4f; // was 5.9f in original snap (should be 2*Vref or 2*3.3
+   const float scl = 6.4f; // was 5.9f in original snap (should be 2*Vref or 2*3.3 = 6.6
    voltage = scl * voltage / 8.0f;   //fudging scaling based on actual measurements; shoud be max of 3.3V at 1023
    return voltage;
 }
@@ -207,15 +207,15 @@ void logAcq(void)
     File file;
   #endif
 
-    if (!file.open("acqLog.txt", O_CREAT | O_WRITE | O_APPEND)) {Serial.println("LOG"); while(1);}
+  if (!file.open("acqLog.txt", O_CREAT | O_WRITE | O_APPEND)) {Serial.println("LOG"); while(1) asm("wfi");}
 
-    struct tm tx = seconds2tm(RTC_TSR);
-    file.printf("%04d%02d%02d_%02d%02d%02d", 
-                  tx.tm_year,tx.tm_mon,tx.tm_mday,tx.tm_hour,tx.tm_min,tx.tm_sec);
+  struct tm tx = seconds2tm(RTC_TSR);
+  file.printf("%04d%02d%02d_%02d%02d%02d", 
+                tx.tm_year,tx.tm_mon,tx.tm_mday,tx.tm_hour,tx.tm_min,tx.tm_sec);
 
-    file.printf(": VIN %f; Temp %f \r\n",readVoltage(),readTemp());
-    
-    file.close();
+  file.printf(": VIN %f; Temp %f \r\n",readVoltage(),readTemp());
+  
+  file.close();
 }
 
 // display menu
@@ -230,7 +230,7 @@ extern "C" void setup() {
   #endif
 
 
-  if(menuSetup()) {  manualSettings(); } menuExit();  
+  if(menuSetup()) {  menuLoop(); } menuExit();  
 
   uint32_t nsec = record_or_sleep();
   if(nsec>0)
@@ -240,8 +240,9 @@ extern "C" void setup() {
     #endif
     Wire.begin();
     SGTL5000_disable();
+    Wire.end();
     I2S_stopClock();
-    delay(100);
+    delay(10);
     setWakeupCallandSleep(nsec);
   }
 
@@ -254,7 +255,6 @@ extern "C" void setup() {
   I2S_modification(fsamps[isf],32);
   delay(1);
   SGTL5000_modification(isf); // must be called after I2S initialization stabilized
-  uSD.init();
   
   #if DO_DEBUG>0
     Serial.println("start");
@@ -262,6 +262,7 @@ extern "C" void setup() {
     Serial.print("Vtemp: "); Serial.println(readTemp());
   #endif
 
+  uSD.init();
   logAcq();
   uSD.chDir(); 
 
@@ -309,10 +310,11 @@ void loop() {
         uint32_t nsec = record_or_sleep();
         if(nsec>0) 
         { queue1.end();
-          acqExit();
           SGTL5000_disable();
+          Wire.end();
           I2S_stopClock();
-          delay(100);
+          acqExit();
+          delay(10);
           uSD.exit();
           setWakeupCallandSleep(nsec);      
         }
