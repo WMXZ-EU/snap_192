@@ -121,6 +121,9 @@ static void gotoSleep(void)
 #if defined(HAS_KINETIS_HSRUN) && F_CPU > 120000000
     kinetis_hsrun_disable( );
 #endif   
+   SYST_CSR &= ~SYST_CSR_TICKINT;      // disable systick timer interrupt
+   SCB_SCR |= SCB_SCR_SLEEPDEEP_MASK;  // Set the SLEEPDEEP bit to enable deep sleep mode (STOP)
+   
    /* Write to PMPROT to allow all possible power modes */
    SMC_PMPROT = SMC_PMPROT_AVLLS_MASK;
    /* Set the STOPM field to 0b100 for VLLSx mode */
@@ -131,8 +134,6 @@ static void gotoSleep(void)
    /*wait for write to complete to SMC before stopping core */
    (void) SMC_PMCTRL;
 
-   SYST_CSR &= ~SYST_CSR_TICKINT;      // disable systick timer interrupt
-   SCB_SCR |= SCB_SCR_SLEEPDEEP_MASK;  // Set the SLEEPDEEP bit to enable deep sleep mode (STOP)
        asm volatile( "wfi" );  // WFI instruction will start entry into STOP mode
    // will never return, but wake-up results in call to ResetHandler() in mk20dx128.c
 }
