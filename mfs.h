@@ -104,11 +104,12 @@ class c_mFS
         #define SD_CS 10
         digitalWriteFast(SD_CS,LOW);
           int ii;
-          for(ii=0; SPI.transfer(0xff)!=0xFF && ii<30000; ii++) asm("wfi");
+          for(ii=0; SPI.transfer(0xff)!=0xFF && ii<30000; ii++) asm volatile("wfi");
           #if DO_DEBUG>0
             Serial.println(ii); Serial.flush();
           #endif
         digitalWriteFast(SD_CS,HIGH);
+        delay(10);
         pinMode(SD_CS,INPUT_DISABLE);
   
         sd.end();
@@ -197,7 +198,8 @@ class c_mFS
     void exit(void){ }
 
     void writeHeader(char * header, uint32_t ndat) 
-    { uint32_t fpos = file.curPosition();
+    { 
+      uint32_t fpos = file.curPosition();
       file.seek(0);
       file.write(header,ndat);
       file.seek(fpos);

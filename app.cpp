@@ -207,7 +207,7 @@ void logAcq(void)
     File file;
   #endif
 
-  if (!file.open("acqLog.txt", O_CREAT | O_WRITE | O_APPEND)) {Serial.println("LOG"); while(1) asm("wfi");}
+  if (!file.open("acqLog.txt", O_CREAT | O_WRITE | O_APPEND)) {Serial.println("LOG"); while(1) asm volatile("wfi");}
 
   struct tm tx = seconds2tm(RTC_TSR);
   file.printf("%04d%02d%02d_%02d%02d%02d", 
@@ -342,5 +342,5 @@ void loop() {
     }
   #endif
   //
-  asm("wfi"); // to save some power switch off idle cpu
+  asm volatile ("wfi"); // to save some power switch off idle cpu
 }
