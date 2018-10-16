@@ -59,12 +59,12 @@ void I2S_modification(uint32_t fsamp, uint16_t nbits)
   iscl[2]=1; // this is good for PJRC sgtl5000 //  
   
   I2S_dividers(iscl, fsamp ,nbits); 
-  int fcpu=F_CPU; 
-  if(F_CPU<=96000000) fcpu=96000000; 
-  float mclk = fcpu * (iscl[0]+1.0f) / (iscl[1]+1.0f);
-  float fs = (fcpu * (iscl[0]+1.0f)) / (iscl[1]+1.0f) / 2.0f / (iscl[2]+1.0f) / (2.0f*nbits); 
   #if DO_DEBUG >0 
-    Serial.printf("%d %d: %d %d %d %d %d %d %d\n\r", 
+	int fcpu=F_CPU; 
+	if((F_CPU==96000000) || (F_CPU==48000000) || (F_CPU==24000000)) fcpu=96000000; 
+	float mclk = fcpu * (iscl[0]+1.0f) / (iscl[1]+1.0f);
+	float fs = (fcpu * (iscl[0]+1.0f)) / (iscl[1]+1.0f) / 2.0f / (iscl[2]+1.0f) / (2.0f*nbits); 
+	Serial.printf("%d %d: %d %d %d %d %d %d %d\n\r", 
         F_CPU, fcpu, fsamp, (int)fs, (int) mclk, nbits,iscl[0]+1,iscl[1]+1,iscl[2]+1); 
   #endif 
  
